@@ -23,6 +23,7 @@ defmodule TT.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:tzdata, "~> 0.1.201603"},
       {:calendar, "~> 0.17.6"}
     ]
   end
