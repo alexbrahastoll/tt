@@ -15,14 +15,14 @@ defmodule TT.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
-      extra_applications: [:logger, :calendar]
+      extra_applications: [:logger],
+      applications: [:calendar]
     ]
   end
 
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:tzdata, "~> 1.0.0"},
       {:calendar, "~> 0.17.6"}
     ]
   end

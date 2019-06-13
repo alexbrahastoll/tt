@@ -6,26 +6,36 @@ defmodule TT.Task do
     Repository.load(initial_state())
   end
 
-  def add_task(name) do
-    {_, now} = DateTime.now("Etc/UTC")
-    now_unix = Calendar.DateTime.Format.unix(now)
+  def track(name) do
+    if name != tasks()[:current] do
+      stop_current()
+      add_task(name)
+    end
+  end
 
-    # %{tasks: [%{name: task, sessions: [%{start: now, end: nil}]}]}
-    new_tasks = %{
-      tasks: tasks()[:tasks] ++ [%{name: name, sessions: [%{start: now_unix, end: nil}]}]
-    }
+  def stop_current do
+    stop(tasks()[:current])
+  end
 
-    Repository.save!(new_tasks)
+  def stop(name) when name === nil do
+    :ignored_attempt_to_stop_nil
+  end
+
+  def stop(name) do
+    update_in(tasks()[:tasks][name][:sessions], fn sessions ->
+      List.replace_at(sessions, -1, %{List.last(sessions) | end: now_unix()})
+    end)
+    |> Repository.save!()
   end
 
   def print_tasks(device \\ :stdio, curr_tasks \\ tasks()) do
-    if Kernel.length(curr_tasks[:tasks]) === 0 do
+    if Map.keys(curr_tasks[:tasks]) |> length === 0 do
       IO.puts(device, "There are no tasks being tracked so far.")
     else
       IO.write("Tasks\n\n")
 
-      Enum.each(curr_tasks[:tasks], fn task ->
-        IO.puts("Task: #{task[:name]}")
+      Enum.each(curr_tasks[:tasks], fn {name, task} ->
+        IO.puts("Task: #{name}")
         IO.puts("Sessions:")
 
         Enum.each(task[:sessions], fn session ->
@@ -56,7 +66,29 @@ defmodule TT.Task do
 
   defp initial_state do
     # Tasks are to be stored by using the following data structure.
-    # %{tasks: [%{name: task, sessions: [%{start: now, end: nil}]}]}
-    %{tasks: []}
+    # %{tasks: %{name => %{sessions: [%{start: now, end: nil}]}}}
+    %{tasks: %{}}
+  end
+
+  defp add_task(name) do
+    updated_tasks =
+      case tasks()[:tasks][name] do
+        nil ->
+          put_in(tasks()[:tasks][name], %{sessions: [%{start: now_unix(), end: nil}]})
+
+        _task ->
+          update_in(tasks()[:tasks][name][:sessions], fn sessions ->
+            sessions ++ %{start: now_unix(), end: nil}
+          end)
+      end
+
+    updated_tasks = put_in(updated_tasks[:current], name)
+
+    Repository.save!(updated_tasks)
+  end
+
+  defp now_unix do
+    {_, now} = DateTime.now("Etc/UTC")
+    Calendar.DateTime.Format.unix(now)
   end
 end

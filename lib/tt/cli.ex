@@ -11,11 +11,14 @@ defmodule TT.CLI do
           "track" ->
             case cmd_args do
               [task] ->
-                Task.add_task(task)
+                Task.track(task)
 
               _ ->
                 IO.puts("#{cmd} command usage: tt #{cmd} task_name")
             end
+
+          "stop" ->
+            Task.stop_current()
 
           _ ->
             IO.puts("#{cmd} is not a valid command.")
