@@ -29,6 +29,23 @@ defmodule TT.Task do
     |> Repository.save!()
   end
 
+  def report(name) do
+    case tasks()[:tasks][name] do
+      nil ->
+        IO.puts("There is no task called #{name}.")
+
+      task ->
+        Enum.map(task[:sessions], fn session ->
+          # We may be reporting about a task that is currently being tracked.
+          # When that is the case, we interpret the session in progress as if
+          # it had finished at the current moment.
+          (session[:end] || now_unix()) - session[:start]
+        end)
+        |> Enum.reduce(fn curr, acc -> acc + curr end)
+        |> print_report
+    end
+  end
+
   def print_tasks(device \\ :stdio, curr_tasks \\ tasks()) do
     if Map.keys(curr_tasks[:tasks]) |> length === 0 do
       IO.puts(device, "There are no tasks being tracked so far.")
@@ -47,19 +64,32 @@ defmodule TT.Task do
     end
   end
 
-  def print_start(session_start) do
+  defp print_report(total_seconds) do
+    total_seconds
+    |> (fn remaining ->
+          IO.write("#{div(remaining, 3600)} hours, ")
+          rem(remaining, 3600)
+        end).()
+    |> (fn remaining ->
+          IO.write("#{div(remaining, 60)} minutes, ")
+          rem(remaining, 60)
+        end).()
+    |> (fn remaining -> IO.write("#{remaining} seconds.\n") end).()
+  end
+
+  defp print_start(session_start) do
     print_datetime(session_start)
   end
 
-  def print_end(session_end) when session_end === nil do
+  defp print_end(session_end) when session_end === nil do
     "(in progress)"
   end
 
-  def print_end(session_end) do
+  defp print_end(session_end) do
     print_datetime(session_end)
   end
 
-  def print_datetime(unix_timestamp) do
+  defp print_datetime(unix_timestamp) do
     Calendar.DateTime.Parse.unix!(unix_timestamp)
     |> Calendar.DateTime.shift_zone!("America/Sao_Paulo")
     |> strftime!("%d/%m/%Y %H:%M:%S")

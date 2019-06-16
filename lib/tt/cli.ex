@@ -9,16 +9,13 @@ defmodule TT.CLI do
             Task.print_tasks()
 
           "track" ->
-            case cmd_args do
-              [task] ->
-                Task.track(task)
-
-              _ ->
-                IO.puts("#{cmd} command usage: tt #{cmd} task_name")
-            end
+            check_cmd_args(:track, cmd_args)
 
           "stop" ->
             Task.stop_current()
+
+          "report" ->
+            check_cmd_args(:report, cmd_args)
 
           _ ->
             IO.puts("#{cmd} is not a valid command.")
@@ -26,6 +23,16 @@ defmodule TT.CLI do
 
       [] ->
         Task.print_tasks()
+    end
+  end
+
+  defp check_cmd_args(cmd, args) do
+    case args do
+      [_arg] ->
+        apply(Task, cmd, args)
+
+      _ ->
+        IO.puts("#{cmd} command usage: tt #{cmd} task_name")
     end
   end
 end
