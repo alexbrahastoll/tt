@@ -23,4 +23,4 @@ erl_crash.dump
 tt-*.tar
 
 # Ignore package binary
-tt
+escript/tt
