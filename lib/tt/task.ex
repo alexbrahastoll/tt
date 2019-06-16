@@ -25,6 +25,7 @@ defmodule TT.Task do
     update_in(tasks()[:tasks][name][:sessions], fn sessions ->
       List.replace_at(sessions, -1, %{List.last(sessions) | end: now_unix()})
     end)
+    |> (fn tasks_being_edited -> put_in(tasks_being_edited[:current], nil) end).()
     |> Repository.save!()
   end
 
@@ -78,7 +79,7 @@ defmodule TT.Task do
 
         _task ->
           update_in(tasks()[:tasks][name][:sessions], fn sessions ->
-            sessions ++ %{start: now_unix(), end: nil}
+            sessions ++ [%{start: now_unix(), end: nil}]
           end)
       end
 
